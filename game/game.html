@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .game-container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 1s ease-in-out;
+            position: relative;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        @keyframes colorChange {
+    0% {
+        background-color: #3498db;
+    }
+
+    50% {
+        background-color: #3498db; /* Use the same blue color for the entire animation */
+    }
+
+    100% {
+        background-color: #3498db;
+    }
+}
+
+        
+
+        body {
+            animation: colorChange 10s infinite;
+        }
+
+        #celebrate,
+        #gameOver {
+            font-size: 3em;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation-duration: 2s;
+        }
+
+        #celebrate {
+            animation-name: celebrateAnimation;
+        }
+
+        #gameOver {
+            animation-name: gameOverAnimation;
+        }
+
+        @keyframes celebrateAnimation {
+            0%,
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+
+        @keyframes gameOverAnimation {
+            0%,
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+
+        .game-over-style {
+            color: #e74c3c;
+            /* Red color for the "Game Over" message */
+            font-size: 2em;
+            /* Adjust the font size */
+            font-weight: bold;
+            /* Apply bold font weight */
+        }
+    </style>
+    <title>Guess the Number Game</title>
+</head>
+
+<body>
+
+    <div class="game-container">
+        <h1>Guess the Number Game</h1>
+        <p>Guess a number between 1 and 10</p>
+        <input type="number" id="userGuess" class="form-control" placeholder="Enter your guess">
+        <button class="btn btn-primary mt-2" onclick="checkGuess()">Submit Guess</button>
+        <p id="result"></p>
+        <p>Attempts: <span id="attempts">0</span></p>
+        <button class="btn btn-success" onclick="restartGame()">Restart Game</button>
+        <div id="celebrate"></div>
+        <div id="gameOver"></div>
+        <!-- Audio elements for correct and incorrect guesses -->
+        <audio id="correctAudio" src="clap.mpeg"></audio>
+        <audio id="incorrectAudio" src="sad.mp4"></audio>
+        <audio id="gameOverAudio" src="GameOver.mp4"></audio>
+        <audio id="alertAudio" src="alert.mpeg"></audio>
+    </div>
+
+    <script>
+        let previousGuess = null;
+        let secretNumber;
+        let attempts = 0;
+        let maxAttempts = 3; // Set the maximum number of attempts
+        let isFirstLoad = true;
+        let isGameOver = false; // Variable to track game over state
+
+        function playAudio(audioId) {
+             audio = document.getElementById(audioId);
+            audio.play();
+        }
+
+        function pauseAllAudio() {
+            const allAudio = document.querySelectorAll('audio');
+            allAudio.forEach(audio => audio.pause());
+        }
+
+        function startGame() {
+            secretNumber = Math.floor(Math.random() * 10) + 1;
+            attempts = 0;
+            document.getElementById("attempts").innerText = attempts;
+            document.getElementById("result").innerText = "";
+            document.getElementById("celebrate").style.opacity = 0;
+            document.getElementById("gameOver").style.opacity = 0;
+            document.getElementById("gameOver").classList.remove("game-over-style"); // Remove the style class
+            isFirstLoad = false;
+            isGameOver = false; // Reset game over state
+            previousGuess = null;
+        }
+
+        function checkGuess() {
+            if (isGameOver) {
+                return; // Do nothing if the game is already over
+            }
+
+             userGuess = document.getElementById("userGuess").value;
+             resultElement = document.getElementById("result");
+            celebrateElement = document.getElementById("celebrate");
+             gameOverElement = document.getElementById("gameOver");
+
+            if (!userGuess || isNaN(userGuess) || userGuess < 1 || userGuess > 10) {
+                resultElement.innerText = "Please enter a valid number between 1 and 10.";
+            } else if (userGuess === previousGuess) {
+                resultElement.innerText = "Already guessed! Try a different number⚠️";
+                pauseAllAudio(); // Pause all audio before playing the incorrect audio
+                playAudio('alertAudio');
+            } else {
+                attempts++;
+                document.getElementById("attempts").innerText = attempts;
+
+                if (parseInt(userGuess) === secretNumber) {
+                    resultElement.innerText = "Congratulations! You guessed the correct number!";
+                    pauseAllAudio(); // Pause all audio before playing the correct audio
+                    playAudio('correctAudio');
+                    if (!isFirstLoad) {
+                        celebrateElement.innerHTML = '👏';
+                        celebrateElement.style.opacity = 1;
+                        setTimeout(() => {
+                            celebrateElement.style.opacity = 0;
+                        }, 2000);
+                    }
+                    isGameOver = true; // Set game over state
+                } else {
+                    resultElement.innerText = `Sorry, Try again! 😢`;
+                    pauseAllAudio(); // Pause all audio before playing the incorrect audio
+                    playAudio('incorrectAudio');
+                    if (!isFirstLoad && attempts === maxAttempts) {
+                        resultElement.innerText = `Sorry, Game Over! 😊`;
+                        pauseAllAudio(); // Pause all audio before playing the incorrect audio
+                        playAudio('gameOverAudio');
+                        gameOverElement.innerHTML = 'Game Over 😊';
+                        gameOverElement.style.opacity = 1;
+                        gameOverElement.style.color = '#e74c3c'; // Apply the unique color inline
+                        gameOverElement.style.fontSize = '2em'; // Adjust the font size inline
+                        gameOverElement.style.fontWeight = 'bold'; // Apply bold font weight inline
+                        setTimeout(() => {
+                            gameOverElement.style.opacity = 0;
+                        }, 2000);
+                        isGameOver = true; // Set game over state
+                    }
+                }
+                previousGuess = userGuess; // Store the current guess as the previous guess
+            }
+        }
+
+        function restartGame() {
+            startGame();
+            document.getElementById("userGuess").value = "";
+            document.getElementById("submitGuessButton").disabled = false; // Enable the button
+        }
+
+        // Start the game when the page loads
+        startGame();
+    </script>
+</body>
+
+</html>
